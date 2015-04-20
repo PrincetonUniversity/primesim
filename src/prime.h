@@ -1,3 +1,7 @@
+//===========================================================================
+// prime.h 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,44 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef PRIME_H
+#define PRIME_H
+
+#include <stdio.h>
+#include <assert.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <string>
+#include <utility>
+#include <unistd.h>
+#include <map>
+#include <set>
+#include <vector>
+#include <pthread.h> 
+
+#include "mpi.h"
+#include "uncore_manager.h"
+#include "xml_parser.h"
+#include "common.h"
+
+//////////////////////
+// GLOBAL VARIABLES //
+//////////////////////
+
+int rank, numtasks;
+int max_msg_size;
+int num_threads = 0;
+MPI_Status status;          /* MPI receive routine parameter */
+list<int> prog_list;
+static unsigned int prog_count = 0;
+UncoreManager uncore_manager;
+ofstream result;
+pthread_mutex_t mutex;
+
+
+
+#endif //PRIME_H

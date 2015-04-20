@@ -1,3 +1,7 @@
+//===========================================================================
+// dram.h 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,32 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef  DRAM_H
+#define  DRAM_H
+
+#include <string>
+#include <inttypes.h>
+#include <fstream>
+#include <stdio.h>
+#include <iostream>
+#include <cmath>
+#include "common.h"
+#include "cache.h"
+
+class Dram
+{
+    public:
+        void init(int access_delay_in);
+        int  access(InsMem* ins_mem);
+        void report(ofstream* result);
+        ~Dram();        
+    private:
+        int access_delay;
+        uint64_t num_accesses;
+};
+
+
+
+#endif //DRAM_H

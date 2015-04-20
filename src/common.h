@@ -1,3 +1,7 @@
+//===========================================================================
+// common.h 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,46 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef COMMON_H
+#define COMMON_H
+
+
+#define PADSIZE 56  // 64 byte line size: 64-8
+#define THREAD_MAX  1024 // Maximum number of threads in one process
+
+enum MessageTypes
+{
+    MEM_REQUESTS = 0,
+    PROCESS_STARTING = -3,
+    PROCESS_FINISHING = -1,
+    INTER_PROCESS_BARRIERS = -2,
+    NEW_THREAD = -4,
+    THREAD_FINISHING = -8,
+    PROGRAM_EXITING = -5
+};
+
+typedef struct MsgMem
+{
+    bool        mem_type; //1 means write, 0 means read
+    int         mem_size; 
+    uint64_t    addr_dmem; 
+    union
+    {
+        int64_t     timer;
+        int64_t     message_type;
+    };
+} MsgMem;
+
+enum MemType
+{
+    RD    = 0,  //read
+    WR    = 1,  //write
+    WB    = 2   //writeback
+};
+
+
+
+
+#endif  // COMMON_H

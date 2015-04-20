@@ -1,3 +1,7 @@
+//===========================================================================
+// bus.h 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,28 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef BUS_H
+#define BUS_H
+
+#include <string>
+#include <inttypes.h>
+#include "queue_model.h"
+
+using namespace std;
+
+class Bus
+{
+    public:
+        ~Bus();
+        bool init(uint64_t delay_in);
+        uint64_t access(uint64_t timer);
+    private:
+        uint64_t delay;
+        pthread_mutex_t mutex;
+        QueueModel *bus_queue;
+};
+
+
+#endif // BUS_H

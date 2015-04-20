@@ -1,3 +1,7 @@
+//===========================================================================
+// thread_sched.h 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,41 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef  THREAD_SCHED_H
+#define  THREAD_SCHED_H
+
+#include <string>
+#include <inttypes.h>
+#include <fstream>
+#include <sstream>
+#include <map>
+#include "xml_parser.h"
+#include "cache.h"
+#include "network.h"
+
+typedef pair<int, int> Key;
+typedef map<Key, int> CoreMap;
+
+
+class ThreadSched
+{
+    public:
+        void init(int num_cores_in);
+        int allocCore(int prog_id, int thread_id);
+        int deallocCore(int prog_id, int thread_id);
+        int getCoreId(int prog_id, int thread_id);
+        int getThreadCount(int prog_id);
+        void report(ofstream *result);
+        ~ThreadSched();        
+    private:
+        CoreMap core_map;
+        int *core_stat;
+        int num_cores;
+};
+
+
+
+
+#endif // THREAD_SCHED_H 

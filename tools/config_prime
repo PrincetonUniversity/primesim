@@ -1,0 +1,222 @@
+#!/usr/bin/python
+
+#This script is used to generate the xml file as the input file for PriME
+
+###########################################################################
+#Copyright (c) 2015 Princeton University
+#All rights reserved.
+#
+#Redistribution and use in source and binary forms, with or without
+#modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the <organization> nor the
+#      names of its contributors may be used to endorse or promote products
+#      derived from this software without specific prior written permission.
+#
+#THIS SOFTWARE IS PROVIDED BY PRINCETON UNIVERSITY "AS IS" AND
+#ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+#WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#DISCLAIMED. IN NO EVENT SHALL PRINCETON UNIVERSITY BE LIABLE FOR ANY
+#DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+#(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+#ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+#SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+##############################################################################
+
+import os 
+import sys 
+import string
+from optparse import OptionParser
+
+
+# Output the xml configuration to the xml file
+def print_dict(file, dictionary, ident = '    '):
+    """ Recursively prints nested dictionaries."""
+
+    for key, value in dictionary.iteritems():
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    file.write(ident + '<' + key + '>\n')
+                    print_dict(file, item, ident+'   ')
+                    file.write(ident + '</' + key + '>\n')
+        elif isinstance(value, dict):
+            file.write(ident + '<' + key + '>\n')
+            print_dict(file, value, ident+'   ')
+            file.write(ident + '</' + key + '>\n')
+        else:
+            file.write(ident+'<'+ key + '>' + str(value) + '</' + key + '>\n')
+
+
+
+
+# On-chip network configuration
+# Note: all latencies are counted in cycles
+
+network = {
+            # 0 -> 2D mesh, 1 -> 3D mesh
+            'net_type'     : 0,
+            # the linker width of the network
+            'data_width'   : 10,
+            # the # of flits for the message header
+            'header_flits' : 3,
+            # the router delay for each flit
+            'router_delay' : 0,
+            # the link delay for each flit 
+            'link_delay' : 1,
+            # the injection delay for each packet
+            'inject_delay' : 1
+}
+
+# data cache hierarchies
+cache = [
+            # L1 cache
+            {
+            # level starts with 0
+            'level' : 0,
+            # the # of cores that share the L1 cache, 1 means private
+            'share' : 1,
+            # hit latency
+            'access_time' : 1,      
+            # cache size in Byte
+            'size' : 32768,
+            # block size in Byte
+            'block_size' : 64,
+            # associativity
+            'num_ways' : 8 
+            },
+            # L2 cache
+            {
+            'level' : 1,
+            #private L2
+            'share' : 1,
+            # hit latency
+            'access_time' : 5,
+            # 256KB
+            'size' : 262144,
+            'block_size' : 64,
+            'num_ways' : 8 
+            },
+            # L3 cache
+            {
+            'level' : 2,
+            # each L3 is shared by 10 cores
+            'share' : 10,
+            'access_time' : 10,
+            'size' : 26214400,
+            'block_size' : 64,
+            'num_ways' : 24 
+            }
+
+        ]
+
+# can be either distributed directory cache or shared llc with embedded 
+# directory cache determined by the shared_llc option in system config
+directory_cache = {
+            # level and share values exit only for compatability. 
+            # They are actually not used for the directory cache
+            'level' : 0,
+            'share' : 1,
+            'access_time' : 10,
+            # cache size per distributed slice
+            'size' : 31457280,
+            'block_size' : 64,
+            'num_ways' : 24 
+}
+
+# TLB can be turned off by settng tlb_enable in system config to 0, address 
+# translation from vitual to physical is also turned off by doing this
+tlb_cache = {
+            # level and share values exit only for compatability. 
+            # They are actually not used for the TLB cache
+            'level' : 0,
+            'share' : 1,
+            'access_time' : 0,
+            # TLB size per core
+            'size' : 64,
+            'block_size' : 1,
+            'num_ways' : 64 
+}
+
+# simulated system config
+system = {
+            # dram access latency
+            'dram_access_time' : 120,
+            # total # of levels in data cache hierarchy
+            'num_levels' : 3,
+            # avarage CPI for non-memory instructions, can be tuned to simulate different types of cores
+            'cpi_nonmem' : 1,
+            # core count
+            'num_cores' : 64,
+            # 0 -> directory based, 1-> bus based
+            'sys_type' : 0,
+            # 0 -> full map, 1 -> limited pointer
+            'protocol_type' : 0,
+            # only used for limited pointers
+            'max_num_sharers' : 6,
+            # page size in Byte
+            'page_size' : 4096,
+            # 0 -> tlb disabled, 1 -> tlb enabled
+            'tlb_enable' : 1,
+            # 0 -> directory cache, 1 -> shared llc with embedded directory cache
+            'shared_llc' : 0,
+            # report detailed results if turned on
+            'verbose_report' : 1,
+            # simulation frequency in GHz
+            'freq' : 2.5,
+            # bus latency between different cache levels
+            'bus_latency' : 2,
+            # latency upon a page miss
+            'page_miss_delay' : 200,
+            'network': network,
+            'cache': cache,
+            'directory_cache': directory_cache,
+            'tlb_cache': tlb_cache,
+}
+
+#simulator config 
+simulator = {
+            # maximum # of memory requests in one batched message
+            'max_msg_size' : 100,
+            # synchronization interval (in cycles) among threads within the same process
+            'thread_sync_interval' : 1000,
+            # synchronization interval (in cycles) among different processes
+            'proc_sync_interval' : 10000,
+            # The extra latency introduced by each system call
+            'syscall_cost' : 10000,
+            # the # of threads in the uncore process
+            'num_recv_threads': 1,
+            'system' : system
+}
+
+
+
+def main():
+   prime_path  = os.environ.get('PRIME_PATH') 
+   usage = "config_prime [options]"
+   parser = OptionParser(usage=usage)
+   parser.add_option("-o", "--output_path",
+                      dest="output_path", default=prime_path + "/xml/config.xml",
+                      metavar="OUTPUT_PATH", help="output the configuration to OUTPUT_PATH, the default output path is xml/config.xml")
+
+   (options, args) = parser.parse_args()
+   f = open(options.output_path, 'w')
+   f.write('<?xml version = "1.0" encoding = "utf-8" standalone = "yes"?>\n\n')
+   f.write('<simulator>\n')
+   print_dict(f, simulator)
+   f.write('</simulator>\n')
+   f.close()
+
+
+if __name__ == "__main__":
+   main()
+
+
+
+

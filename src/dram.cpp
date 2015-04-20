@@ -1,3 +1,7 @@
+//===========================================================================
+// dram.cpp implements a simple dram model with constant delay 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,35 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+
+#include "dram.h"
+
+using namespace std;
+
+
+void Dram::init(int access_delay_in)
+{
+    access_delay = access_delay_in;
+    num_accesses = 0;
+}
+
+int Dram::access(InsMem * ins_mem)
+{
+    num_accesses++;
+    return access_delay;
+}
+
+
+void Dram::report(ofstream* result)
+{
+
+    *result << "DRAM Statistics:\n";
+    *result << "Total # of DRAM accesses: " << num_accesses <<endl;
+}
+
+Dram::~Dram()
+{
+}       
+

@@ -1,3 +1,9 @@
+//===========================================================================
+// bus.cpp implements a simple bus with fix delay. The 
+// contention delay is based on analytical M/G/1 queueing model
+// from the MIT Graphite simulator
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +28,41 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include <iostream>
+#include <cmath>
+#include <string>
+#include <cstring>
+#include <inttypes.h>
+
+#include "bus.h"
+
+
+using namespace std;
+
+bool Bus::init(uint64_t delay_in)
+{
+    delay = delay_in;
+    bus_queue = QueueModel::create("history_tree", delay);
+    pthread_mutex_init(&mutex, NULL);
+    return true;
+}
+
+// This function returns bus contention_delay only because bus access time is 
+// included in cache access time
+
+uint64_t Bus::access(uint64_t timer)
+{
+    pthread_mutex_lock(&mutex);
+    uint64_t contention_delay = bus_queue->computeQueueDelay(timer, delay); 
+    pthread_mutex_unlock(&mutex);
+    return contention_delay;
+}
+
+
+Bus::~Bus()
+{
+    pthread_mutex_destroy(&mutex);
+    delete bus_queue;
+}

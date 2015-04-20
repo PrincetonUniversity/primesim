@@ -1,3 +1,7 @@
+//===========================================================================
+// uncore_manager.h 
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +26,48 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef  UNCORE_MANAGER_H
+#define  UNCORE_MANAGER_H
+
+#include <string>
+#include <inttypes.h>
+#include <fstream>
+#include <sstream>
+#include <list>
+#include <pthread.h> 
+#include "system.h"
+#include "thread_sched.h"
+#include "xml_parser.h"
+#include "cache.h"
+#include "network.h"
+#include "common.h"
+
+#include "mpi.h"
+
+
+
+class UncoreManager
+{
+    public:
+        void init(XmlSim* xml_sim);
+        void getSimStartTime();
+        void getSimFinishTime();
+        int allocCore(int prog_id, int thread_id);
+        int deallocCore(int prog_id, int thread_id);
+        int getCoreId(int prog_id, int thread_id);
+        int uncore_access(int core_id, InsMem* ins_mem, int64_t timer);
+        void report(ofstream *result);
+        ~UncoreManager();        
+    private:
+        struct timespec sim_start_time;
+        struct timespec sim_finish_time;
+        System sys;
+        ThreadSched thread_sched;
+};
+
+
+
+
+#endif // UNCORE_MANAGER_H 

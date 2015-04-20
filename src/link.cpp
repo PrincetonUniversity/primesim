@@ -1,3 +1,9 @@
+//===========================================================================
+// link.cpp implements a link with fix propogation delay. The 
+// contention delay is based on analytical M/G/1 queueing model from 
+// the MIT Graphite Simulator
+//===========================================================================
+/*
 Copyright (c) 2015 Princeton University
 All rights reserved.
 
@@ -22,3 +28,39 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include <iostream>
+#include <cmath>
+#include <string>
+#include <cstring>
+#include <inttypes.h>
+
+#include "link.h"
+
+
+using namespace std;
+
+bool Link::init(uint64_t delay_in)
+{
+    pthread_mutex_init(&mutex, NULL);
+    delay = delay_in;
+    link_queue = QueueModel::create("history_tree", delay);
+    return true;
+}
+
+// This function returns link delay including contention delay
+
+uint64_t Link::access(uint64_t timer, int packet_len)
+{
+    pthread_mutex_lock(&mutex);
+    uint64_t contention_delay = link_queue->computeQueueDelay(timer, packet_len);
+    pthread_mutex_unlock(&mutex);
+    return (contention_delay + delay);
+}
+
+Link::~Link()
+{
+    pthread_mutex_destroy(&mutex);
+    delete link_queue;
+}

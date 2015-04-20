@@ -1,0 +1,10 @@
+obj/*
+!/obj/Graphite
+/obj/Graphite/*
+!/obj/Graphite/.gitkeep
+output/*
+dep/*
+!/dep/Graphite
+/dep/Graphite/*
+!/dep/Graphite/.gitkeep
+bin/*
