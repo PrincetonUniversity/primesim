@@ -51,7 +51,6 @@ void System::init(XmlSys* xml_sys_in)
     sys_type = xml_sys->sys_type;
     protocol_type = xml_sys->protocol_type;
     num_cores = xml_sys->num_cores;
-    cpi_nonmem = xml_sys->cpi_nonmem;
     dram_access_time = xml_sys->dram_access_time;
     page_size = xml_sys->page_size;
     tlb_enable = xml_sys->tlb_enable;

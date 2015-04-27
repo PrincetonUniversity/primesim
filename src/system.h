@@ -103,7 +103,6 @@ class System
         int        protocol_type;
         int        max_num_sharers;
         int        num_cores;
-        int        cpi_nonmem;
         int        dram_access_time;
         int        num_levels;
         int        page_size;
