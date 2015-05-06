@@ -214,7 +214,7 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
     line_cur = cache_cur->accessLine(ins_mem);
     //Cache hit
     if (line_cur != NULL) {
-        line_cur->timestamp = timer;
+        line_cur->timestamp = timer+delay[core_id];
         hit_flag[core_id] = true; 
         //Write
         if (ins_mem->mem_type == WR) {
@@ -243,7 +243,6 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
                line_cur->state = M;
            }
            inval_children(cache_cur, ins_mem);
-           line_cur->timestamp = timer;
            cache_cur->unlockUp(ins_mem);
            return M;
         }
@@ -252,7 +251,6 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
             if (line_cur->state != S) {
                 share_children(cache_cur, ins_mem);
             }
-            line_cur->timestamp = timer;
             cache_cur->unlockUp(ins_mem);
             return S;
         }
@@ -265,7 +263,7 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
         if (line_cur->state) {
             inval_children(cache_cur, &ins_mem_old);
         }
-        line_cur->timestamp = timer;
+        line_cur->timestamp = timer+delay[core_id];
         if (level != num_levels-1) {
             line_cur->state = mesi_bus(cache_cur->parent, level+1, 
                                    cache_id*cache_level[level].share/cache_level[level+1].share, core_id, 
