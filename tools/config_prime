@@ -109,9 +109,10 @@ cache = [
             # each L3 is shared by 10 cores
             'share' : 10,
             'access_time' : 10,
-            'size' : 26214400,
+            #4MB
+            'size' : 4194304,
             'block_size' : 64,
-            'num_ways' : 24 
+            'num_ways' : 16 
             }
 
         ]

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # home directory for PriME, set it to the correct path
-export PRIME_PATH=/home/yfu/research/prime
+export PRIME_PATH=/home/yfu/research/primesim
 
 # home directory for Pin, set it to the correct path
 export PINPATH=/home/yfu/softwares/pin/pin-2.14-71313-gcc.4.4.7-linux
