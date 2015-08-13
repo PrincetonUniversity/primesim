@@ -106,8 +106,8 @@ cache = [
             # L3 cache
             {
             'level' : 2,
-            # each L3 is shared by 10 cores
-            'share' : 10,
+            # each L3 is shared by 64 cores
+            'share' : 64,
             'access_time' : 10,
             #4MB
             'size' : 4194304,
@@ -187,7 +187,8 @@ simulator = {
             'max_msg_size' : 100,
             # synchronization interval (in cycles) among threads within the same process
             'thread_sync_interval' : 1000,
-            # synchronization interval (in cycles) among different processes
+            # synchronization interval (in cycles) among different processes, 
+            # better to set to be a multiple of thread_sync_interval
             'proc_sync_interval' : 10000,
             # The extra latency introduced by each system call
             'syscall_cost' : 10000,
