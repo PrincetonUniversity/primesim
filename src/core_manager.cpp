@@ -133,6 +133,7 @@ void CoreManager::barrier(THREADID threadid)
         PIN_MutexLock(&mutex);
         thread_state[threadid] = WAIT;
         if (barrier_counter == 0) {
+            //Release all threads that are still waiting in the previous barrier 
             PIN_SemaphoreSet(&sem);
             barrier_flag = 1;
             while(barrier_flag) {
@@ -140,7 +141,6 @@ void CoreManager::barrier(THREADID threadid)
                 for(int i = 0; i< max_threads; i++) {
                     if(((uint32_t)i != threadid) && thread_state[i] == WAIT) {
                         barrier_flag = 1;
-                        break;
                     }    
                 }
             }
@@ -148,7 +148,7 @@ void CoreManager::barrier(THREADID threadid)
         }
         barrier_counter++;
         if (barrier_counter == num_threads) {
-            if ((num_procs > 1) && (barrier_time % (proc_sync_interval) == 0)) {
+            if ((num_procs > 1) && ((int)(barrier_time/thread_sync_interval) % (int)(proc_sync_interval/thread_sync_interval) == 0)) {
                 msg_mem[threadid][0].message_type = INTER_PROCESS_BARRIERS;
 
                 MPI_Send(&msg_mem[threadid][0], sizeof(MsgMem), MPI_CHAR, 0, core[threadid], MPI_COMM_WORLD);
@@ -162,6 +162,7 @@ void CoreManager::barrier(THREADID threadid)
         PIN_MutexUnlock(&mutex);
         backoff_time = 1; 
         while (!PIN_SemaphoreTimedWait(&sem, backoff_time)) {
+            //Leave barrier once the Semaphore is set
             if (!PIN_MutexTryLock(&mutex)) {
                 if (PIN_SemaphoreIsSet(&sem)) {
                     break;
@@ -193,6 +194,10 @@ void CoreManager::barrier(THREADID threadid)
         }
         thread_state[threadid] = ACTIVE;
         
+    }
+    //Update barrier time in the initial single-threaded phase
+    else if (num_threads == 1 && num_procs == 1) {
+        barrier_time = cycle[threadid]._count;
     }
 }
 
