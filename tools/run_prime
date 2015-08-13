@@ -68,7 +68,7 @@ def run_prime(config_path, output_path, progs):
         prog_split = prog.split(',')
         if len(prog_split) == 3:  
             # 0 thread indicates serial execution
-            if prog_split[1] == 0:
+            if int(prog_split[1]) == 0:
                 f.write(' : -np 1 parsecmgmt -a run -p '+prog_split[0]+' -i '+prog_split[2]+' -c gcc-serial -s "'+
                         'pin -t '+prime_path+'/bin/prime.so -c '+ config_path + ' -o ' + output_path + ' --"')
             else:
