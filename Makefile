@@ -47,17 +47,17 @@ PIN_CXX_FLAGS := -Wall -Werror -Wno-unknown-pragmas  -O3 -fomit-frame-pointer \
            -I$(PINPATH)/source/include/pin \
            -I$(PINPATH)/source/include/pin/gen \
            -I$(PINPATH)/source/include/gen -fno-stack-protector -DTARGET_IA32E -DHOST_IA32E \
-           -fPIC -DTARGET_LINUX -O3 -fomit-frame-pointer
+           -fPIC -DTARGET_LINUX 
 
 PIN_LD_FLAGS :=  -Wl,--hash-style=sysv -shared -Wl,-Bsymbolic \
            -Wl,--version-script=$(PIN_VERSION_SCRIPT)  \
            -L$(PINPATH)/source/tools/Lib/ -lxml2 -lz -lm -g3 -O3 \
            -L$(PINPATH)/source/tools/ExtLib/ -L$(PINPATH)/extras/xed-intel64/lib -L$(PINPATH)/intel64/lib \
-           -L$(PINPATH)/intel64/lib-ext  -lpin  -lxed -lpindwarf -ldl -lz -lrt 
+           -L$(PINPATH)/intel64/lib-ext  -lpin  -lxed -lpindwarf -ldl -lrt 
 
 CXX_FLAGS := -Wall -Werror -Wno-unknown-pragmas -O3 -g3 -lrt -I$(LIBXML2_PATH) -I$(GRAPHITE_PATH)
 
-LD_FLAGS := -lxml2 -lz -lm -g3 -O3  -ldl -lz -lrt 
+LD_FLAGS := -lxml2 -lz -lm -g3 -O3 -ldl -lrt 
            
 
 .PHONY: clean remove 
