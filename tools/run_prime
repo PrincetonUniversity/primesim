@@ -62,7 +62,7 @@ def run_prime(config_path, output_path, progs):
         f.write('cd ' + parsec_path + '\n\n')
         f.write('source env.sh\n')
 
-    f.write('mpiexec --verbose --display-map --display-allocation -np 1 '
+    f.write('mpiexec --verbose --display-map --display-allocation -mca btl_sm_use_knem 0 -np 1 '
             +prime_path+'/bin/prime ' + config_path + ' ' +output_path)
     for prog in progs:
         prog_split = prog.split(',')
