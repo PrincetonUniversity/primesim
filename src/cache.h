@@ -94,6 +94,7 @@ typedef struct InsMem
     char        mem_type; // 2 means writeback, 1 means write, 0 means read
     int         prog_id;
     int         thread_id;
+    int         rec_thread_id;
     uint64_t    addr_dmem; 
 } InsMem;
 
@@ -105,14 +106,13 @@ class Cache
         Cache*      parent;
         Cache**     child;
         Bus*        bus;
-        void init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, int page_size_in);
+        void init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, int page_size_in, int level_in, int cache_id_in);
         Line* accessLine(InsMem* ins_mem);
         Line* directAccess(int set, int way, InsMem* ins_mem);
         Line* replaceLine(InsMem* ins_mem_old, InsMem* ins_mem);
         void flushAll();
         Line* flushLine(int set, int way, InsMem* ins_mem_old);
         Line* flushAddr(InsMem* ins_mem);
-        Line* initSet(int index);
         Line* findSet(int index);
         void incInsCount();
         void incMissCount();
@@ -141,7 +141,6 @@ class Cache
     private:
         int reverseBits(int num, int size);
         Line              **line;
-        LineMap           line_map;
         pthread_mutex_t   *lock_up;
         pthread_mutex_t   *lock_down;
         CacheType         cache_type;
@@ -159,9 +158,10 @@ class Cache
         int               offset_bits;
         int               index_bits;  
         int               page_size;
+        int               level;
+        int               cache_id;
         uint64_t          offset_mask;
         uint64_t          index_mask;
-        Addr              addr_temp;
 
 };
 

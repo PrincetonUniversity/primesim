@@ -98,17 +98,44 @@ void System::init(XmlSys* xml_sys_in)
     }
     if (xml_sys->directory_cache.size > 0) {
         directory_cache = new Cache* [network.getNumNodes()];
-        for (int i = 0; i < network.getNumNodes(); i++) {
+        for (i = 0; i < network.getNumNodes(); i++) {
             directory_cache[i] = NULL;
         }
     }
 
     if (tlb_enable && xml_sys->tlb_cache.size > 0) {
         tlb_cache = new Cache [num_cores];
-        for (int i = 0; i < num_cores; i++) {
-            tlb_cache[i].init(&(xml_sys->tlb_cache), TLB_CACHE, 0, page_size);
+        for (i = 0; i < num_cores; i++) {
+            tlb_cache[i].init(&(xml_sys->tlb_cache), TLB_CACHE, 0, page_size, 0, i);
         }
     }
+
+    cache_lock = new pthread_mutex_t* [num_levels];
+    for (i=0; i<num_levels; i++) {
+        cache_lock[i] = new pthread_mutex_t [cache_level[i].num_caches];
+        for (j=0; j<cache_level[i].num_caches; j++) {
+            pthread_mutex_init(&cache_lock[i][j], NULL);
+        }
+    }
+
+    directory_cache_lock = new pthread_mutex_t [network.getNumNodes()];
+    for (i = 0; i < network.getNumNodes(); i++) {
+        pthread_mutex_init(&directory_cache_lock[i], NULL);
+    }
+
+    cache_init_done = new bool* [num_levels];
+    for (i=0; i<num_levels; i++) {
+        cache_init_done[i] = new bool [cache_level[i].num_caches];
+        for (j=0; j<cache_level[i].num_caches; j++) {
+            cache_init_done[i][j] = false;
+        }
+    }   
+
+    directory_cache_init_done = new bool [network.getNumNodes()];
+    for (i = 0; i < network.getNumNodes(); i++) {
+        directory_cache_init_done[i] = false;
+    }
+
     page_table.init(page_size, xml_sys->page_miss_delay);
     dram.init(dram_access_time);
 }
@@ -118,7 +145,7 @@ int System::access(int core_id, InsMem* ins_mem, int64_t timer)
 {
     int cache_id;
     if (core_id >= num_cores) {
-        cerr << "Not enough cores!\n";
+        cerr << "Error: Not enough cores!\n";
         return -1;
     }
 
@@ -145,9 +172,10 @@ int System::access(int core_id, InsMem* ins_mem, int64_t timer)
 Cache* System::init_caches(int level, int cache_id)
 {
     int k;
+    pthread_mutex_lock(&cache_lock[level][cache_id]);
     if (cache[level][cache_id] == NULL) {
         cache[level][cache_id] = new Cache();
-        cache[level][cache_id]->init(&(xml_sys->cache[level]), DATA_CACHE, xml_sys->bus_latency, page_size);
+        cache[level][cache_id]->init(&(xml_sys->cache[level]), DATA_CACHE, xml_sys->bus_latency, page_size, level, cache_id);
         if (level == 0) {
             cache[level][cache_id]->num_children = 0;
             cache[level][cache_id]->child = NULL;
@@ -173,17 +201,21 @@ Cache* System::init_caches(int level, int cache_id)
             cache[level][cache_id]->child[k] = cache[level-1][cache_id*cache[level][cache_id]->num_children+k];
         }
     }
+    cache_init_done[level][cache_id] = true;
+    pthread_mutex_unlock(&cache_lock[level][cache_id]);
     return cache[level][cache_id];
 }
 
 void System::init_directories(int home_id)
 {
-    if (xml_sys->directory_cache.size > 0) {
+    pthread_mutex_lock(&directory_cache_lock[home_id]);
+    if (directory_cache[home_id] == NULL) {
         directory_cache[home_id] = new Cache();
-        directory_cache[home_id]->init(&(xml_sys->directory_cache), DIRECTORY_CACHE, xml_sys->bus_latency, page_size);
+        directory_cache[home_id]->init(&(xml_sys->directory_cache), DIRECTORY_CACHE, xml_sys->bus_latency, page_size, 0, home_id);
     }
+    directory_cache_init_done[home_id] = true;
+    pthread_mutex_unlock(&directory_cache_lock[home_id]);
 }
-
 
 
 
@@ -197,7 +229,7 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
     Line*  line_temp;
     InsMem ins_mem_old;
     
-    if (cache_cur == NULL) {
+    if (!cache_init_done[level][cache_id]) {
         cache_cur = init_caches(level, cache_id); 
     }
     if (cache_cur->bus != NULL) {
@@ -231,6 +263,9 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
                    shared_line = 0;
                    for (i=0; i < cache_level[num_levels-1].num_caches; i++) {
                        if (i != cache_id) {
+                           if (!cache_init_done[num_levels-1][i]) {
+                               init_caches(num_levels-1, i);
+                           }
                            line_temp = cache[num_levels-1][i]->accessLine(ins_mem);
                            if(line_temp != NULL) {
                                shared_line = 1;
@@ -275,6 +310,9 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
                 shared_line = 0;
                 for (i=0; i < cache_level[num_levels-1].num_caches; i++) {
                     if (i != cache_id) {
+                        if (!cache_init_done[num_levels-1][i]) {
+                            init_caches(num_levels-1, i);
+                        }
                         line_temp = cache[num_levels-1][i]->accessLine(ins_mem);
                         if (line_temp != NULL) {
                             shared_line = 1;
@@ -296,6 +334,9 @@ char System::mesi_bus(Cache* cache_cur, int level, int cache_id, int core_id, In
                  shared_line = 0;
                  for (i=0; i < cache_level[num_levels-1].num_caches; i++) {
                     if (i != cache_id) {
+                         if (!cache_init_done[num_levels-1][i]) {
+                             init_caches(num_levels-1, i);
+                         } 
                          line_temp = cache[num_levels-1][i]->accessLine(ins_mem);
                          if(line_temp != NULL)
                          {
@@ -335,7 +376,7 @@ char System::mesi_directory(Cache* cache_cur, int level, int cache_id, int core_
     Line*  line_cur;
     InsMem ins_mem_old;
   
-    if (cache_cur == NULL) {
+    if (!cache_init_done[level][cache_id]) {
         cache_cur = init_caches(level, cache_id); 
     }
 
@@ -536,7 +577,7 @@ int System::inval_children(Cache* cache_cur, InsMem* ins_mem)
 int System::accessDirectoryCache(int cache_id, int home_id, InsMem* ins_mem, int64_t timer, char* state)
 {
 
-    if (directory_cache[home_id] == NULL) {
+    if (!directory_cache_init_done[home_id]) {
         init_directories(home_id); 
     }
     int delay = 0, delay_temp =0, delay_pipe =0, delay_max = 0;
@@ -544,6 +585,7 @@ int System::accessDirectoryCache(int cache_id, int home_id, InsMem* ins_mem, int
     IntSet::iterator pos;
     Line* line_cur;
     home_stat[home_id] = 1;
+    assert(directory_cache[home_id] != NULL);
     directory_cache[home_id]->lockUp(ins_mem);
     line_cur = directory_cache[home_id]->accessLine(ins_mem);
     directory_cache[home_id]->incInsCount();
@@ -691,7 +733,7 @@ int System::accessDirectoryCache(int cache_id, int home_id, InsMem* ins_mem, int
 //Access distributed shared LLC with embedded directory cache
 int System::accessSharedCache(int cache_id, int home_id, InsMem* ins_mem, int64_t timer, char* state)
 {
-    if (directory_cache[home_id] == NULL) {
+    if (!directory_cache_init_done[home_id]) {
         init_directories(home_id); 
     }
     int delay = 0, delay_temp =0, delay_pipe =0, delay_max = 0;
@@ -898,7 +940,7 @@ int System::getHomeId(InsMem *ins_mem)
     int home_id;
     home_id = allocHomeId(network.getNumNodes(), ins_mem->addr_dmem);
     if (home_id < 0) {
-        cerr<<"wrong home id\n";
+        cerr<<"Error: Wrong home id\n";
     }
     return home_id;
 }
@@ -1083,11 +1125,13 @@ System::~System()
         }
         for (i=0; i<num_levels; i++) {
             delete [] cache[i];
+            delete [] cache_lock[i];
+            delete [] cache_init_done[i];
         }
         for (i = 0; i < network.getNumNodes(); i++) {
             if (directory_cache[i] != NULL) {
                 delete directory_cache[i];
-            }   
+            }
         }
         delete [] hit_flag;
         delete [] delay;
@@ -1096,4 +1140,8 @@ System::~System()
         delete [] cache_level;
         delete [] directory_cache;
         delete [] tlb_cache;
+        delete [] cache_lock;
+        delete [] directory_cache_lock;
+        delete [] cache_init_done;
+        delete [] directory_cache_init_done;
 }

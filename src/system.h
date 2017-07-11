@@ -119,6 +119,10 @@ class System
         Cache***   cache;
         Cache**    directory_cache;
         Cache*     tlb_cache;
+        pthread_mutex_t** cache_lock;
+        pthread_mutex_t*  directory_cache_lock;
+        bool**     cache_init_done;
+        bool*      directory_cache_init_done;
         PageTable  page_table;
         Network    network;
         Dram       dram;

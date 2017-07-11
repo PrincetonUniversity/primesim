@@ -47,7 +47,7 @@ using namespace std;
 
 
 
-void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, int page_size_in)
+void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, int page_size_in, int level_in, int cache_id_in)
 {
     ins_count = 0;;
     miss_count = 0;
@@ -60,6 +60,8 @@ void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, 
     access_time = xml_cache->access_time;
     cache_type = cache_type_in;
     page_size = page_size_in;
+    level = level_in;
+    cache_id = cache_id_in;
 
     if (cache_type == TLB_CACHE) {
         offset_bits = (int) (log2(page_size));
@@ -72,12 +74,7 @@ void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, 
     index_bits  = (int) (log2(num_sets));
     index_mask  = (uint64_t)(num_sets - 1);
 
-    addr_temp.tag = 0;
-    addr_temp.index = 0;
-    addr_temp.offset = 0;
-
-    line_map.clear();
-    if (cache_type == DATA_CACHE) {
+    if (cache_type == DATA_CACHE || cache_type == DIRECTORY_CACHE) {
         line = new Line* [num_sets];
         lock_up = new pthread_mutex_t [num_sets];
         lock_down = new pthread_mutex_t [num_sets];
@@ -112,11 +109,7 @@ void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, 
         }
     }
     else {
-        lock_up = new pthread_mutex_t [num_sets];
-        for (uint64_t i = 0; i < num_sets; i++ ) {
-            pthread_mutex_init(&lock_up[i], NULL);
-        }
-        
+        cerr << "Error: Undefined cache type!\n";
     }
     if (xml_cache->share > 1) {
         bus = new Bus;
@@ -127,38 +120,12 @@ void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, 
     }
 }
 
-//Allocate cache sets on demand for directory cache/ll cache with directories to save memory usage 
-Line* Cache::initSet(int index)
-{
-    Line* line_new = new Line[num_ways];
-    for (uint64_t i = 0; i < num_ways; i++ ) {
-        line_new[i].state = I;
-        line_new[i].id = 0;
-        line_new[i].set_num = index;
-        line_new[i].way_num = i;
-        line_new[i].tag = 0;
-        line_new[i].timestamp = 0;
-    }
 
-    line_map[index] = line_new;
-    return line_new;
-}
 
 Line* Cache::findSet(int index)
 {
-    if (cache_type == DATA_CACHE || cache_type == TLB_CACHE) {
-        return line[index];
-    }
-    else {
-        LineMap::iterator it;
-        it = line_map.find(index);
-        if (it == line_map.end()) {
-            return NULL;
-        }
-        else {
-            return it->second;
-        }
-    }
+    assert(index >= 0 && index < num_sets);
+    return line[index];
 }
 
 int Cache::reverseBits(int num, int size)
@@ -218,11 +185,9 @@ Line* Cache::accessLine(InsMem* ins_mem)
 {
     uint64_t i;
     Line* set_cur;
+    Addr addr_temp;
     addrParse(ins_mem->addr_dmem, &addr_temp);
     set_cur = findSet(addr_temp.index);
-    if (set_cur == NULL) {
-        set_cur = initSet(addr_temp.index);
-    }
     assert(set_cur != NULL);
     for (i = 0; i < num_ways; i++) {
         if( (set_cur[i].id == ins_mem->prog_id)
@@ -239,12 +204,12 @@ Line* Cache::accessLine(InsMem* ins_mem)
 Line* Cache::replaceLine(InsMem* ins_mem_old, InsMem* ins_mem)
 {
     Addr addr_old;
+    Addr addr_temp;
     int way_rp;
     uint64_t i, addr_dmem_old;
     Line* set_cur;
     addrParse(ins_mem->addr_dmem, &addr_temp);
     set_cur = findSet(addr_temp.index);
-    assert(set_cur != NULL);
     
     for (i = 0; i < num_ways; i++) {
         if (set_cur[i].state == I) {
@@ -298,24 +263,12 @@ Line* Cache::directAccess(int set, int way, InsMem* ins_mem)
 
 void Cache::flushAll()
 {
-    if (cache_type == DATA_CACHE || cache_type == TLB_CACHE) {   
-        for (uint64_t i = 0; i < num_sets; i++) {
-            for (uint64_t j = 0; j < num_sets; j++) {
-                line[i][j].state = I;
-                line[i][j].id = 0;
-                line[i][j].tag = 0;
-                line[i][j].sharer_set.clear();
-            }
-        }
-    }
-    else {
-        for (LineMap::iterator it = line_map.begin(); it != line_map.end(); ++it) {
-             for (uint64_t j = 0; j < num_ways; j++ ) {
-                it->second[j].state = I;
-                it->second[j].id = 0;
-                it->second[j].tag = 0;
-                it->second[j].sharer_set.clear();
-            }
+    for (uint64_t i = 0; i < num_sets; i++) {
+        for (uint64_t j = 0; j < num_sets; j++) {
+            line[i][j].state = I;
+            line[i][j].id = 0;
+            line[i][j].tag = 0;
+            line[i][j].sharer_set.clear();
         }
     }
 }
@@ -369,24 +322,30 @@ Line* Cache::flushAddr(InsMem* ins_mem)
 
 void Cache::lockUp(InsMem* ins_mem)
 {
+    Addr addr_temp;
     addrParse(ins_mem->addr_dmem, &addr_temp);
+    assert(addr_temp.index >= 0 && addr_temp.index < num_sets);
     pthread_mutex_lock(&lock_up[addr_temp.index]);
 }
 
 void Cache::unlockUp(InsMem* ins_mem)
 {
+    Addr addr_temp;
     addrParse(ins_mem->addr_dmem, &addr_temp);
+    assert(addr_temp.index >= 0 && addr_temp.index < num_sets);
     pthread_mutex_unlock(&lock_up[addr_temp.index]);
 }
 
 void Cache::lockDown(InsMem* ins_mem)
 {
+    Addr addr_temp;
     addrParse(ins_mem->addr_dmem, &addr_temp);
     pthread_mutex_lock(&lock_down[addr_temp.index]);
 }
 
 void Cache::unlockDown(InsMem* ins_mem)
 {
+    Addr addr_temp;
     addrParse(ins_mem->addr_dmem, &addr_temp);
     pthread_mutex_unlock(&lock_down[addr_temp.index]);
 }
@@ -483,7 +442,7 @@ void Cache::report(ofstream* result)
 
 Cache::~Cache()
 {
-    if (cache_type == DATA_CACHE) {
+    if (cache_type == DATA_CACHE || cache_type == DIRECTORY_CACHE) {
         for (uint64_t i = 0; i < num_sets; i++ ) {
             pthread_mutex_destroy(&lock_up[i]);
             pthread_mutex_destroy(&lock_down[i]);
@@ -500,15 +459,8 @@ Cache::~Cache()
         delete [] line;
     }
     else {
-        for (LineMap::iterator it = line_map.begin(); it != line_map.end(); ++it) {
-            delete [] it->second;
-        }   
-        for (uint64_t i = 0; i < num_sets; i++ ) {
-            pthread_mutex_destroy(&lock_up[i]);
-        }
-        delete [] lock_up;
+        cerr << "Error: Undefined cache type!\n";
     }
-    
     if (bus != NULL) {
         delete bus;
     }
