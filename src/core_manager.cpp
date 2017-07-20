@@ -68,11 +68,7 @@ void CoreManager::init(XmlSim* xml_sim, int num_procs_in, int rank_in)
 
     for(int i = 0; i < THREAD_MAX; i++) {
         msg_mem[i] = new MsgMem [max_msg_size + 1];
-        send_req[i] = new MPI_Request [max_msg_size];
-        recv_req[i] = new MPI_Request [max_msg_size];
         memset(msg_mem[i], 0, (max_msg_size + 1) * sizeof(MsgMem));
-        memset(send_req[i], 0, max_msg_size * sizeof(MPI_Request));
-        memset(recv_req[i], 0, max_msg_size * sizeof(MPI_Request));
         thread_state[i] = DEAD;
         thread_map[i] = -1;
         mpi_pos[i] = 1;
@@ -489,7 +485,5 @@ CoreManager::~CoreManager()
 {
     for(int i = 0; i < THREAD_MAX; i++) {
         delete [] msg_mem[i];
-        delete [] send_req[i];
-        delete [] recv_req[i];
     }
 }       

@@ -113,8 +113,6 @@ class CoreManager
         ThreadData ins_nonmem[THREAD_MAX];
         ThreadData ins_count[THREAD_MAX];
         MsgMem   *msg_mem[THREAD_MAX];
-        MPI_Request   *send_req[THREAD_MAX];
-        MPI_Request   *recv_req[THREAD_MAX];
         int delay[THREAD_MAX];
         int core[THREAD_MAX];
         int mpi_pos[THREAD_MAX];
