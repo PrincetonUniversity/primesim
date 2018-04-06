@@ -26,7 +26,7 @@ QueueModelHistoryList::QueueModelHistoryList(UInt64 min_processing_time)
   _analytical_model_enabled = true;
   _interleaving_enabled = true;
 
-   _free_interval_list.push_back(std::make_pair<UInt64,UInt64>(0, UINT64_MAX));
+   _free_interval_list.push_back(std::make_pair(0, UINT64_MAX));
    _queue_model_m_g_1 = new QueueModelMG1();
 
    _total_requests_using_analytical_model = 0;
@@ -87,11 +87,11 @@ QueueModelHistoryList::computeUsingHistoryList(UInt64 pkt_time, UInt64 processin
          curr_it = _free_interval_list.erase(curr_it);
          if ((pkt_time - interval.first) >= _min_processing_time)
          {
-            _free_interval_list.insert(curr_it, std::make_pair<UInt64,UInt64>(interval.first, pkt_time));
+            _free_interval_list.insert(curr_it, std::make_pair(interval.first, pkt_time));
          }
          if ((interval.second - (pkt_time + processing_time)) >= _min_processing_time)
          {
-            _free_interval_list.insert(curr_it, std::make_pair<UInt64,UInt64>(pkt_time + processing_time, interval.second));
+            _free_interval_list.insert(curr_it, std::make_pair(pkt_time + processing_time, interval.second));
          }
          break;
       }
@@ -103,7 +103,7 @@ QueueModelHistoryList::computeUsingHistoryList(UInt64 pkt_time, UInt64 processin
          curr_it = _free_interval_list.erase(curr_it);
          if ((interval.second - (interval.first + processing_time)) >= _min_processing_time)
          {
-            _free_interval_list.insert(curr_it, std::make_pair<UInt64,UInt64>(interval.first + processing_time, interval.second));
+            _free_interval_list.insert(curr_it, std::make_pair(interval.first + processing_time, interval.second));
          }
          break;
       }
@@ -114,7 +114,7 @@ QueueModelHistoryList::computeUsingHistoryList(UInt64 pkt_time, UInt64 processin
             curr_it = _free_interval_list.erase(curr_it);
             if ((pkt_time - interval.first) >= _min_processing_time)
             {
-               _free_interval_list.insert(curr_it, std::make_pair<UInt64,UInt64>(interval.first, pkt_time));
+               _free_interval_list.insert(curr_it, std::make_pair(interval.first, pkt_time));
             }
             curr_it --;
             

@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // GLOBAL VARIABLES //
 //////////////////////
 
-int rank, numtasks;
+int myrank, numtasks;
 int max_msg_size;
 int num_threads = 0;
 MPI_Status status;          /* MPI receive routine parameter */

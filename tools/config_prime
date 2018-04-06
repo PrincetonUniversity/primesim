@@ -39,7 +39,7 @@ from optparse import OptionParser
 def print_dict(file, dictionary, ident = '    '):
     """ Recursively prints nested dictionaries."""
 
-    for key, value in dictionary.iteritems():
+    for key, value in dictionary.items():
         if isinstance(value, list):
             for item in value:
                 if isinstance(item, dict):

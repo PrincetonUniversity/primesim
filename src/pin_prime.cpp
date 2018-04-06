@@ -169,7 +169,7 @@ void Fini(int32_t code, void *v)
 {
     core_manager->getSimFinishTime();
     stringstream ss_rank;
-    ss_rank << rank;
+    ss_rank << myrank;
     result.open((KnobOutputFile.Value() + "_" + ss_rank.str()).c_str());
     //Report results
     core_manager->report(&result);
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     MPI_Comm_size(MPI_COMM_WORLD,&num_tasks);
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
 
     int rank_excl[1] = {0};
     // Extract the original group handle *
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 
     core_manager = new CoreManager;
     //# of core processes equals num_tasks-1 because there is a uncore process
-    core_manager->init(xml_sim, num_tasks-1, rank);
+    core_manager->init(xml_sim, num_tasks-1, myrank);
     core_manager->getSimStartTime();
 
  

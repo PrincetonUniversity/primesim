@@ -8,3 +8,4 @@ dep/*
 /dep/Graphite/*
 !/dep/Graphite/.gitkeep
 bin/*
+cmd/*
