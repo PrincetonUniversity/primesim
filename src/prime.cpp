@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 
     MPI_Comm   new_comm;
     MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
-    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
     MPI_Comm_create(MPI_COMM_WORLD, MPI_GROUP_EMPTY, &new_comm);
 
     XmlParser xml_parser;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     stringstream ss_rank;
-    ss_rank << rank;
+    ss_rank << myrank;
     result.open((string(argv[2])+ "_" + ss_rank.str()).c_str());
 
     uncore_manager.getSimStartTime();

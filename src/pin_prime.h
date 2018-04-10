@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "core_manager.h"
 
 
-int rank, new_rank, num_tasks;
+int myrank, new_rank, num_tasks;
 MPI_Status status;          /* MPI receive routine parameter */
 MPI_Group  orig_group, new_group;
 MPI_Comm   new_comm;

@@ -4,7 +4,7 @@
 
 #include "queue_model_history_tree.h"
 
-#define PAIR(x_,y_)  (make_pair<UInt64,UInt64>(x_,y_))
+#define PAIR(x_,y_)  (std::make_pair(x_,y_))
 
 QueueModelHistoryTree::QueueModelHistoryTree(UInt64 min_processing_time)
    : QueueModel(HISTORY_TREE)

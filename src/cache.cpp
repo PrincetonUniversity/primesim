@@ -124,7 +124,7 @@ void Cache::init(XmlCache* xml_cache, CacheType cache_type_in, int bus_latency, 
 
 Line* Cache::findSet(int index)
 {
-    assert(index >= 0 && index < num_sets);
+    assert(index >= 0 && index < (int)num_sets);
     return line[index];
 }
 

@@ -41,6 +41,7 @@ PIN_O_FILES := obj/pin_prime.o obj/pin_xml_parser.o obj/pin_core_manager.o
 
 PIN_CXX_FLAGS := -Wall -Werror -Wno-unknown-pragmas  -O3 -fomit-frame-pointer \
            -DBIGARRAY_MULTIPLIER=1 -DUSING_XED  -fno-strict-aliasing \
+           -D_GLIBCXX_USE_CXX11_ABI=0 -fabi-version=2 \
            -I$(LIBXML2_PATH) -g3 -I$(PINPATH)/source/tools/Include \
            -I$(PINPATH)/source/tools/InstLib -I$(PINPATH)/extras/xed-intel64/include \
            -I$(PINPATH)/extras/components/include -I$(PINPATH)/source/include \
